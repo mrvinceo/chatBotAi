@@ -16,38 +16,36 @@ def hello_world(
 async def webhook():
     if request.method == 'GET':
         return "A GET response!"
-    else:
-        try:
-            req = request.get_json(silent=True, force=True)
-            fulfillmentText = 'you said'
-            query_result = req.get('queryResult')
-            query = query_result.get('queryText')
 
-            start_sequence = "\nJOY->"
-            restart_sequence = "\nUser->"
+    try:
+        req = request.get_json(silent=True, force=True)
+        fulfillmentText = 'you said'
+        query_result = req.get('queryResult')
+        query = query_result.get('queryText')
+        start_sequence = "\nJOY->"
+        restart_sequence = "\nUser->"
+        if query_result.get('action') == 'input.unknown':
 
-            if query_result.get('action') == 'input.unknown':
+            response = await openai.Completion.create(
+                model="davinci:ft-open-college-of-the-arts-2023-01-13-13-39-11",
+                prompt="The following is a conversation with a therapist and a user. The therapist is JOY, who uses compassionate listening to have helpful and meaningful conversations with users. JOY is empathic and friendly. JOY's objective is to make the user feel better by feeling heard. With each response, JOY offers follow-up questions to encourage openness and tries to continue the conversation in a natural way. \n\nJOY-> Hello, I am your personal mental health assistant. What's on your mind today?\nUser->"+query+"JOY->",
+                temperature=0.89,
+                max_tokens=162,
+                top_p=1,
+                frequency_penalty=0,
+                presence_penalty=0.6,
+                stop=["\n"]
+            )
 
-                response = await openai.Completion.create(
-                    model="davinci:ft-open-college-of-the-arts-2023-01-13-13-39-11",
-                    prompt="The following is a conversation with a therapist and a user. The therapist is JOY, who uses compassionate listening to have helpful and meaningful conversations with users. JOY is empathic and friendly. JOY's objective is to make the user feel better by feeling heard. With each response, JOY offers follow-up questions to encourage openness and tries to continue the conversation in a natural way. \n\nJOY-> Hello, I am your personal mental health assistant. What's on your mind today?\nUser->"+query+"JOY->",
-                    temperature=0.89,
-                    max_tokens=162,
-                    top_p=1,
-                    frequency_penalty=0,
-                    presence_penalty=0.6,
-                    stop=["\n"]
-                )
+        result = response.get('choices')[0].get('text')
 
-            result = response.get('choices')[0].get('text')
-
-            return {
-                "fulfillmentText":
-                result,
-                "source":
-                "webhookdata"
-            }
-            return '200'
+        return {
+            "fulfillmentText":
+            result,
+            "source":
+            "webhookdata"
+        }
+        return '200'
     except Exception as e:
         print('error',e)
         exc_type, exc_obj, exc_tb = sys.exc_info()
